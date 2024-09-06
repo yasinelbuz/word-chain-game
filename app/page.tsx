@@ -1,101 +1,118 @@
-import Image from "next/image";
+"use client";
+
+import { ApiResponse, IwordListArray } from "@/types/word-result";
+import React, { useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [inputValue, setInputValue] = useState<string>("");
+  const [lastWord, setLastWord] = useState<string>("");
+  const [wordList, setWordList] = useState<IwordListArray | null>(null);
+  const [error, setError] = useState<string>("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  // const rePlayGame = () => {
+  //   setInputValue("");
+  //   setLastWord("");
+  //   setAttempts(5);
+  //   setWordList(null);
+  //   setError("");
+  // };
+
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
+    e.preventDefault();
+
+    if (!inputValue) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api?word=${encodeURIComponent(inputValue)}`);
+      const data: ApiResponse = await res.json();
+
+      if (Array.isArray(data)) {
+        const newWord = data[0].sozu;
+        const isWordAlreadyUsed = wordList?.some(
+          (item) => item.word === newWord
+        );
+
+        const isFirstWordOrMatchesLastLetter =
+          !lastWord ||
+          newWord.toLowerCase().charAt(0) ===
+            lastWord.toLowerCase().charAt(lastWord.length - 1);
+
+        if (!isWordAlreadyUsed) {
+          if (isFirstWordOrMatchesLastLetter) {
+            setLastWord(newWord);
+            setError("");
+            addWordToList(newWord, true);
+          } else {
+            setError("Kelime son harfle başlamıyor!");
+            addWordToList(newWord, false);
+          }
+        } else {
+          setError("Bu kelime zaten kullanılmış!");
+          addWordToList(newWord, false);
+        }
+      } else {
+        setError("Yazdığınız kelime Türkçe sözlükte bulunmamaktadır!");
+        addWordToList(inputValue, false);
+      }
+
+      setInputValue("");
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  // Yardımcı fonksiyon
+  function addWordToList(word: string, isRight: boolean) {
+    setWordList((prev) =>
+      prev ? [...prev, { word, isRight }] : [{ word, isRight }]
+    );
+  }
+
+  return (
+    <div className="h-screen w-full">
+      <div className="flex flex-col md:flex-row">
+        <div className="md:w-1/2 h-screen bg-purple-500 flex flex-col justify-center items-center">
+          <h1 className="mb-4 font-extrabold text-2xl text-purple-950">
+            <span className="bg-white rounded-md">⛓️‍💥</span> Word Chain
+          </h1>
+          <form onSubmit={handleSubmit} className="w-1/2">
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setInputValue(e.target.value)
+              }
+              placeholder="Kelime yaz"
+              className="block w-full p-2 border border-gray-300 rounded-md mb-4 text-center text-black"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            <button
+              type="submit"
+              className="w-full p-2 bg-purple-800 text-white rounded-md hover:bg-purple-900"
+            >
+              Dene
+            </button>
+          </form>
+          <div className="text-center mt-4">
+            <div className="text-purprle-300 underline">{error && error}</div>
+            <div>{lastWord && "Son kelime: " + lastWord}</div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="md:w-1/2 w-full p-12 bg-orange-100 text-black overflow-hidden">
+          <h2 className="text-xl font-bold mb-2 underline">
+            Kullanılan Kelimeler
+          </h2>
+          <ul className="list-disc pl-5 overflow-y-auto h-[calc(100vh-10rem)] mt-4">
+            {wordList &&
+              wordList.map((word, index) => (
+                <li key={index}>
+                  {word.word} {word.isRight ? "✅" : "❌"}
+                </li>
+              ))}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }
