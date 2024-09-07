@@ -11,9 +11,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const res = await fetch(
-      `https://sozluk.gov.tr/yazim?ara=${encodeURIComponent(word)}`
-    );
+   
 
     const data = await res.json();
     

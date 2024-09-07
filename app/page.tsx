@@ -25,8 +25,18 @@ export default function Home() {
     }
 
     try {
-      const res = await fetch(`/api?word=${encodeURIComponent(inputValue)}`);
-      const data: ApiResponse = await res.json();
+       const res = await fetch(
+         `https://sozluk.gov.tr/yazim?ara=${encodeURIComponent(inputValue)}`,
+         {
+           headers: {
+             Connection: "keep-alive",
+           },
+         }
+       );
+
+       const data: ApiResponse = await res.json();
+
+       console.log(data);
 
       if (Array.isArray(data)) {
         const newWord = data[0].sozu;
